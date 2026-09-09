@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --navy-primary: #152244;
+    --navy-dark: #101B36;
+    --navy-light: #1E305E;
+    --gold-accent: #B8862E;
+    --gold-hover: #9E7124;
+    --gold-soft: #FBF1DE;
+    --teal-accent: #0E7C74;
+    --teal-soft: #E4F5F2;
+    --blue-accent: #3562C9;
+    --blue-soft: #E9EFFC;
+    --amber-accent: #C98A1D;
+    --amber-soft: #FCF1DD;
+    --rose-accent: #C64550;
+    --rose-soft: #FBEAEA;
+    --canvas: #F2F4F8;
+    --surface: #FFFFFF;
+    --border: #E6E9F0;
+    --text-primary: #18213A;
+    --text-muted: #68708A;
+    --text-faint: #9AA1B5;
+  }
+
+  body {
+    background-color: var(--canvas);
+    color: var(--text-primary);
+    font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6, .font-display {
+    font-family: var(--font-poppins), system-ui, sans-serif;
+  }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #E6E9F0;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #B4BCCE;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9AA1B5;
+}
+
+/* SweetAlert2 Custom Theme */
+.swal2-popup.hrms-swal {
+  border-radius: 16px !important;
+  padding: 24px !important;
+  font-family: var(--font-inter), sans-serif !important;
+  box-shadow: 0 20px 40px -15px rgba(21, 34, 68, 0.15) !important;
+  border: 1px solid #E6E9F0 !important;
+}
+
+.swal2-title {
+  font-family: var(--font-poppins), sans-serif !important;
+  font-weight: 600 !important;
+  color: #18213A !important;
+}
+
+.swal2-confirm.hrms-btn-primary {
+  background-color: #B8862E !important;
+  color: #ffffff !important;
+  border-radius: 8px !important;
+  padding: 10px 24px !important;
+  font-weight: 500 !important;
+  box-shadow: 0 4px 12px rgba(184, 134, 46, 0.25) !important;
+}
+
+.swal2-cancel.hrms-btn-secondary {
+  background-color: #F2F4F8 !important;
+  color: #68708A !important;
+  border-radius: 8px !important;
+  padding: 10px 24px !important;
+  font-weight: 500 !important;
+}
