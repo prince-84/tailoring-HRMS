@@ -17,7 +17,7 @@ class EmployeeController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Employee::with(['department', 'designation', 'branch', 'shift', 'manager']);
+        $query = Employee::with(['department', 'designation', 'branch', 'shift', 'manager', 'company', 'location']);
 
         if ($request->filled('department_id')) {
             $query->where('department_id', $request->department_id);
@@ -57,6 +57,8 @@ class EmployeeController extends Controller
             'designation',
             'branch',
             'shift',
+            'company',
+            'location',
             'manager',
             'complianceDocuments',
             'leaveBalances.leaveType',
@@ -76,13 +78,29 @@ class EmployeeController extends Controller
             'last_name' => 'required|string|max:100',
             'email' => 'required|email|unique:employees,email|unique:users,email',
             'phone' => 'nullable|string|max:30',
+            'home_phone' => 'nullable|string|max:30',
+            'address' => 'nullable|string|max:500',
             'gender' => 'required|in:Male,Female,Other',
             'date_of_birth' => 'nullable|date',
             'nationality' => 'required|string|max:100',
+            'marital_status' => 'nullable|string|max:50',
             'emirates_id_number' => 'nullable|string|max:50',
             'passport_number' => 'nullable|string|max:50',
+            'passport_issue_date' => 'nullable|date',
+            'labour_card_id' => 'nullable|string|max:100',
             'visa_type' => 'nullable|string|max:50',
             'visa_expiry_date' => 'nullable|date',
+            'father_name' => 'nullable|string|max:100',
+            'religion' => 'nullable|string|max:100',
+            'blood_group' => 'nullable|string|max:10',
+            'emergency_contact_person' => 'nullable|string|max:100',
+            'emergency_contact_number' => 'nullable|string|max:30',
+            'emergency_contact_email' => 'nullable|email|max:255',
+            'company_visa_mol_id' => 'nullable|string|max:100',
+            'company_id' => 'nullable|exists:companies,id',
+            'location_id' => 'nullable|exists:locations,id',
+            'employment_type' => 'nullable|string|max:50',
+            'salary_transfer_method' => 'nullable|string|max:100',
             'department_id' => 'required|exists:departments,id',
             'designation_id' => 'required|exists:designations,id',
             'branch_id' => 'required|exists:branches,id',
@@ -153,7 +171,7 @@ class EmployeeController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Employee created successfully with generated login credentials.',
-                'data' => $employee->load(['department', 'designation', 'branch', 'shift']),
+                'data' => $employee->load(['department', 'designation', 'branch', 'shift', 'company', 'location']),
             ], 201);
         });
     }
@@ -165,12 +183,29 @@ class EmployeeController extends Controller
             'last_name' => 'required|string|max:100',
             'email' => 'required|email|unique:employees,email,' . $employee->id,
             'phone' => 'nullable|string|max:30',
+            'home_phone' => 'nullable|string|max:30',
+            'address' => 'nullable|string|max:500',
             'gender' => 'required|in:Male,Female,Other',
+            'date_of_birth' => 'nullable|date',
             'nationality' => 'required|string|max:100',
+            'marital_status' => 'nullable|string|max:50',
             'emirates_id_number' => 'nullable|string|max:50',
             'passport_number' => 'nullable|string|max:50',
+            'passport_issue_date' => 'nullable|date',
+            'labour_card_id' => 'nullable|string|max:100',
             'visa_type' => 'nullable|string|max:50',
             'visa_expiry_date' => 'nullable|date',
+            'father_name' => 'nullable|string|max:100',
+            'religion' => 'nullable|string|max:100',
+            'blood_group' => 'nullable|string|max:10',
+            'emergency_contact_person' => 'nullable|string|max:100',
+            'emergency_contact_number' => 'nullable|string|max:30',
+            'emergency_contact_email' => 'nullable|email|max:255',
+            'company_visa_mol_id' => 'nullable|string|max:100',
+            'company_id' => 'nullable|exists:companies,id',
+            'location_id' => 'nullable|exists:locations,id',
+            'employment_type' => 'nullable|string|max:50',
+            'salary_transfer_method' => 'nullable|string|max:100',
             'department_id' => 'required|exists:departments,id',
             'designation_id' => 'required|exists:designations,id',
             'branch_id' => 'required|exists:branches,id',
@@ -199,7 +234,7 @@ class EmployeeController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Employee details updated successfully',
-            'data' => $employee->load(['department', 'designation', 'branch', 'shift']),
+            'data' => $employee->load(['department', 'designation', 'branch', 'shift', 'company', 'location']),
         ]);
     }
 
@@ -213,3 +248,7 @@ class EmployeeController extends Controller
         ]);
     }
 }
+
+
+
+

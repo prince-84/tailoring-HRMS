@@ -14,6 +14,7 @@ export default function EmployeesPage() {
   const [designations, setDesignations] = useState<any[]>([]);
   const [branches, setBranches] = useState<any[]>([]);
   const [shifts, setShifts] = useState<any[]>([]);
+  const [companies, setCompanies] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Modal State
@@ -45,24 +46,55 @@ export default function EmployeesPage() {
     other_allowances: '',
     bank_name: '',
     iban: 'AE',
+    passport_issue_date: '',
+    labour_card_id: '',
+    home_phone: '',
+    address: '',
+    father_name: '',
+    religion: '',
+    blood_group: '',
+    emergency_contact_person: '',
+    emergency_contact_number: '',
+    emergency_contact_email: '',
+    company_visa_mol_id: '',
+    company_id: '',
+    location_id: '',
+    employment_type: '',
+    salary_transfer_method: '',
+    marital_status: '',
+    date_of_birth: '',
+    status: 'active',
   });
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [empRes, deptRes, desigRes] = await Promise.all([
+      const [empRes, deptRes, desigRes, compRes, branchRes, shiftRes] = await Promise.all([
         api.get('/employees?per_page=100'),
         api.get('/departments'),
         api.get('/designations'),
+        api.get('/companies'),
+        api.get('/branches'),
+        api.get('/shifts'),
       ]);
       setEmployees(empRes.data.data.data || []);
       setDepartments(deptRes.data.data || []);
       setDesignations(desigRes.data.data || []);
+      setCompanies(compRes.data.data || []);
+      setBranches(branchRes.data.data || []);
+      setShifts(shiftRes.data.data || []);
     } catch {
       showToast('Could not load employees', 'error');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const selectedCompany = companies.find((company) => String(company.id) === String(formData.company_id));
+  const locations = selectedCompany?.locations || [];
+
+  const handleCompanyChange = (companyId: string) => {
+    setFormData({ ...formData, company_id: companyId, location_id: '' });
   };
 
   useEffect(() => {
@@ -199,34 +231,560 @@ export default function EmployeesPage() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title="Enroll New Employee"
-        subtitle="Complete UAE Labour Law details and WPS salary breakdown."
+        subtitle="Complete employee, employment, compliance and WPS details."
         maxWidth="xl"
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-[#18213A] mb-1">First Name *</label>
-              <input
-                type="text"
-                required
-                value={formData.first_name}
-                onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
-              />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Personal Information */}
+          <section>
+            <div className="mb-3">
+              <h3 className="text-sm font-bold text-[#18213A]">Personal Information</h3>
+              <p className="text-[11px] text-[#68708A] mt-0.5">
+                Basic identity, contact and personal details.
+              </p>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-[#18213A] mb-1">Last Name *</label>
-              <input
-                type="text"
-                required
-                value={formData.last_name}
-                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
-              />
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">First Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.first_name}
+                  onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Last Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.last_name}
+                  onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Employee Status *</label>
+                <select
+                  required
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                >
+                  <option value="active">Active</option>
+                  <option value="probation">Probation</option>
+                  <option value="on_leave">On Leave</option>
+                  <option value="resigned">Resigned</option>
+                  <option value="terminated">Terminated</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Birth Date</label>
+                <input
+                  type="date"
+                  value={formData.date_of_birth}
+                  onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Gender *</label>
+                <select
+                  required
+                  value={formData.gender}
+                  onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                >
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Date of Joining *</label>
+                <input
+                  type="date"
+                  required
+                  value={formData.joining_date}
+                  onChange={(e) => setFormData({ ...formData, joining_date: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Marital Status</label>
+                <select
+                  value={formData.marital_status}
+                  onChange={(e) => setFormData({ ...formData, marital_status: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                >
+                  <option value="">Select Marital Status</option>
+                  <option value="Single">Single</option>
+                  <option value="Married">Married</option>
+                  <option value="Divorced">Divorced</option>
+                  <option value="Widowed">Widowed</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Country *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.nationality}
+                  onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
+                  placeholder="e.g. United Arab Emirates"
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Passport ID</label>
+                <input
+                  type="text"
+                  value={formData.passport_number}
+                  onChange={(e) => setFormData({ ...formData, passport_number: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Passport Issue Date</label>
+                <input
+                  type="date"
+                  value={formData.passport_issue_date}
+                  onChange={(e) => setFormData({ ...formData, passport_issue_date: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Emirates ID</label>
+                <input
+                  type="text"
+                  value={formData.emirates_id_number}
+                  onChange={(e) => setFormData({ ...formData, emirates_id_number: e.target.value })}
+                  placeholder="784-YYYY-XXXXXXX-X"
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Labour Card ID</label>
+                <input
+                  type="text"
+                  value={formData.labour_card_id}
+                  onChange={(e) => setFormData({ ...formData, labour_card_id: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Phone *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  placeholder="+971 50 000 0000"
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Home Phone Number</label>
+                <input
+                  type="text"
+                  value={formData.home_phone}
+                  onChange={(e) => setFormData({ ...formData, home_phone: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Address</label>
+                <textarea
+                  rows={2}
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white resize-none"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Employment & Additional Information */}
+          <section className="border-t border-[#E6E9F0] pt-5">
+            <div className="mb-3">
+              <h3 className="text-sm font-bold text-[#18213A]">Employment & Additional Information</h3>
+              <p className="text-[11px] text-[#68708A] mt-0.5">
+                Employment assignment, emergency contact and company information.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Father Name</label>
+                <input
+                  type="text"
+                  value={formData.father_name}
+                  onChange={(e) => setFormData({ ...formData, father_name: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Religion</label>
+                <input
+                  type="text"
+                  value={formData.religion}
+                  onChange={(e) => setFormData({ ...formData, religion: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Blood Group</label>
+                <select
+                  value={formData.blood_group}
+                  onChange={(e) => setFormData({ ...formData, blood_group: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                >
+                  <option value="">Select Blood Group</option>
+                  <option value="A+">A+</option>
+                  <option value="A-">A-</option>
+                  <option value="B+">B+</option>
+                  <option value="B-">B-</option>
+                  <option value="O+">O+</option>
+                  <option value="O-">O-</option>
+                  <option value="AB+">AB+</option>
+                  <option value="AB-">AB-</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Emergency Contact Person</label>
+                <input
+                  type="text"
+                  value={formData.emergency_contact_person}
+                  onChange={(e) => setFormData({ ...formData, emergency_contact_person: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Emergency Contact Number</label>
+                <input
+                  type="text"
+                  value={formData.emergency_contact_number}
+                  onChange={(e) => setFormData({ ...formData, emergency_contact_number: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Emergency Contact Email</label>
+                <input
+                  type="email"
+                  value={formData.emergency_contact_email}
+                  onChange={(e) => setFormData({ ...formData, emergency_contact_email: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Company Visa MOL ID</label>
+                <input
+                  type="text"
+                  value={formData.company_visa_mol_id}
+                  onChange={(e) => setFormData({ ...formData, company_visa_mol_id: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Company *</label>
+                <select
+                  required
+                  value={formData.company_id}
+                  onChange={(e) => handleCompanyChange(e.target.value)}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                >
+                  <option value="">Select Company</option>
+                  {companies.map((company) => (
+                    <option key={company.id} value={company.id}>
+                      {company.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Location *</label>
+                <select
+                  required
+                  value={formData.location_id}
+                  onChange={(e) => setFormData({ ...formData, location_id: e.target.value })}
+                  disabled={!formData.company_id}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white disabled:opacity-60"
+                >
+                  <option value="">
+                    {formData.company_id ? 'Select Location' : 'Select Company First'}
+                  </option>
+                  {locations.map((location) => (
+                    <option key={location.id} value={location.id}>
+                      {location.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Department *</label>
+                <select
+                  required
+                  value={formData.department_id}
+                  onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                >
+                  <option value="">Select Department</option>
+                  {departments.map((department) => (
+                    <option key={department.id} value={department.id}>
+                      {department.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Designation *</label>
+                <select
+                  required
+                  value={formData.designation_id}
+                  onChange={(e) => setFormData({ ...formData, designation_id: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                >
+                  <option value="">Select Designation</option>
+                  {designations.map((designation) => (
+                    <option key={designation.id} value={designation.id}>
+                      {designation.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Contract Type *</label>
+                <select
+                  required
+                  value={formData.contract_type}
+                  onChange={(e) => setFormData({ ...formData, contract_type: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                >
+                  <option value="Limited">Limited</option>
+                  <option value="Unlimited">Unlimited</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Employment Type</label>
+                <select
+                  value={formData.employment_type}
+                  onChange={(e) => setFormData({ ...formData, employment_type: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                >
+                  <option value="">Select Employment Type</option>
+                  <option value="Full-time">Full-time</option>
+                  <option value="Part-time">Part-time</option>
+                  <option value="Contract">Contract</option>
+                  <option value="Internship">Internship</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Salary Transfer Method</label>
+                <select
+                  value={formData.salary_transfer_method}
+                  onChange={(e) => setFormData({ ...formData, salary_transfer_method: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                >
+                  <option value="">Select Transfer Method</option>
+                  <option value="SIF - General">SIF - General</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Cheque">Cheque</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Branch *</label>
+                <select
+                  required
+                  value={formData.branch_id}
+                  onChange={(e) => setFormData({ ...formData, branch_id: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                >
+                  <option value="">Select Branch</option>
+                  {branches.map((branch) => (
+                    <option key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Shift</label>
+                <select
+                  value={formData.shift_id}
+                  onChange={(e) => setFormData({ ...formData, shift_id: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                >
+                  <option value="">Select Shift</option>
+                  {shifts.map((shift) => (
+                    <option key={shift.id} value={shift.id}>
+                      {shift.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </section>
+
+          {/* Immigration & WPS */}
+          <section className="border-t border-[#E6E9F0] pt-5">
+            <div className="mb-3">
+              <h3 className="text-sm font-bold text-[#18213A]">Immigration & WPS</h3>
+              <p className="text-[11px] text-[#68708A] mt-0.5">
+                UAE visa and salary information used by the existing HRMS payroll structure.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Visa Type</label>
+                <select
+                  value={formData.visa_type}
+                  onChange={(e) => setFormData({ ...formData, visa_type: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                >
+                  <option value="Employment">Employment</option>
+                  <option value="Family">Family</option>
+                  <option value="Visit">Visit</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Visa Expiry Date</label>
+                <input
+                  type="date"
+                  value={formData.visa_expiry_date}
+                  onChange={(e) => setFormData({ ...formData, visa_expiry_date: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Bank Name</label>
+                <input
+                  type="text"
+                  value={formData.bank_name}
+                  onChange={(e) => setFormData({ ...formData, bank_name: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">IBAN</label>
+                <input
+                  type="text"
+                  value={formData.iban}
+                  onChange={(e) => setFormData({ ...formData, iban: e.target.value })}
+                  placeholder="AE..."
+                  className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
+                />
+              </div>
+            </div>
+
+            <div className="mt-3 p-3 bg-[#F2F4F8] rounded-xl border border-[#E6E9F0]">
+              <p className="text-xs font-bold text-[#18213A] uppercase tracking-wider mb-2">
+                Salary Structure (AED)
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                <div>
+                  <label className="block text-[11px] text-[#68708A] mb-1">Basic *</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    required
+                    placeholder="0.00"
+                    value={formData.basic_salary}
+                    onChange={(e) => setFormData({ ...formData, basic_salary: e.target.value })}
+                    className="w-full px-2 py-1.5 bg-white border border-[#E6E9F0] rounded text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] text-[#68708A] mb-1">Housing</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={formData.housing_allowance}
+                    onChange={(e) => setFormData({ ...formData, housing_allowance: e.target.value })}
+                    className="w-full px-2 py-1.5 bg-white border border-[#E6E9F0] rounded text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] text-[#68708A] mb-1">Transport</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={formData.transport_allowance}
+                    onChange={(e) => setFormData({ ...formData, transport_allowance: e.target.value })}
+                    className="w-full px-2 py-1.5 bg-white border border-[#E6E9F0] rounded text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] text-[#68708A] mb-1">Other</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={formData.other_allowances}
+                    onChange={(e) => setFormData({ ...formData, other_allowances: e.target.value })}
+                    className="w-full px-2 py-1.5 bg-white border border-[#E6E9F0] rounded text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Account Details */}
+          <section className="border-t border-[#E6E9F0] pt-5">
+            <div className="mb-3">
+              <h3 className="text-sm font-bold text-[#18213A]">Account Details</h3>
+              <p className="text-[11px] text-[#68708A] mt-0.5">
+                Login and communication details for the employee profile.
+              </p>
+            </div>
+
             <div>
               <label className="block text-xs font-medium text-[#18213A] mb-1">Corporate Email *</label>
               <input
@@ -237,148 +795,9 @@ export default function EmployeesPage() {
                 className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
               />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-[#18213A] mb-1">UAE Phone</label>
-              <input
-                type="text"
-                placeholder="+971 50 000 0000"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
-              />
-            </div>
-          </div>
+          </section>
 
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-[#18213A] mb-1">Department *</label>
-              <select
-                required
-                value={formData.department_id}
-                onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
-                className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
-              >
-                <option value="">Select Department</option>
-                {departments.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-[#18213A] mb-1">Designation *</label>
-              <select
-                required
-                value={formData.designation_id}
-                onChange={(e) => setFormData({ ...formData, designation_id: e.target.value })}
-                className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
-              >
-                <option value="">Select Designation</option>
-                {designations.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-[#18213A] mb-1">Branch *</label>
-              <select
-                required
-                value={formData.branch_id}
-                onChange={(e) => setFormData({ ...formData, branch_id: e.target.value })}
-                className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
-              >
-                <option value="">Select Branch</option>
-                <option value="1">Dubai HQ (Business Bay)</option>
-                <option value="2">Abu Dhabi Branch</option>
-                <option value="3">Sharjah Operations</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-[#18213A] mb-1">Nationality *</label>
-              <input
-                type="text"
-                required
-                value={formData.nationality}
-                onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
-                className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-[#18213A] mb-1">Emirates ID</label>
-              <input
-                type="text"
-                placeholder="784-YYYY-XXXXXXX-X"
-                value={formData.emirates_id_number}
-                onChange={(e) => setFormData({ ...formData, emirates_id_number: e.target.value })}
-                className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-[#18213A] mb-1">Visa Expiry Date</label>
-              <input
-                type="date"
-                value={formData.visa_expiry_date}
-                onChange={(e) => setFormData({ ...formData, visa_expiry_date: e.target.value })}
-                className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
-              />
-            </div>
-          </div>
-
-          {/* Compensation Breakdown */}
-          <div className="p-3 bg-[#F2F4F8] rounded-xl border border-[#E6E9F0] space-y-2">
-            <p className="text-xs font-bold text-[#18213A] uppercase tracking-wider">Salary Structure (AED)</p>
-            <div className="grid grid-cols-4 gap-2">
-              <div>
-                <label className="text-[11px] text-[#68708A]">Basic *</label>
-                <input
-                  type="number"
-                  required
-                  placeholder="0.00"
-                  value={formData.basic_salary}
-                  onChange={(e) => setFormData({ ...formData, basic_salary: e.target.value })}
-                  className="w-full px-2 py-1.5 bg-white border border-[#E6E9F0] rounded text-xs"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] text-[#68708A]">Housing</label>
-                <input
-                  type="number"
-                  placeholder="0.00"
-                  value={formData.housing_allowance}
-                  onChange={(e) => setFormData({ ...formData, housing_allowance: e.target.value })}
-                  className="w-full px-2 py-1.5 bg-white border border-[#E6E9F0] rounded text-xs"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] text-[#68708A]">Transport</label>
-                <input
-                  type="number"
-                  placeholder="0.00"
-                  value={formData.transport_allowance}
-                  onChange={(e) => setFormData({ ...formData, transport_allowance: e.target.value })}
-                  className="w-full px-2 py-1.5 bg-white border border-[#E6E9F0] rounded text-xs"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] text-[#68708A]">Other</label>
-                <input
-                  type="number"
-                  placeholder="0.00"
-                  value={formData.other_allowances}
-                  onChange={(e) => setFormData({ ...formData, other_allowances: e.target.value })}
-                  className="w-full px-2 py-1.5 bg-white border border-[#E6E9F0] rounded text-xs"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-2 pt-2 border-t border-[#E6E9F0]">
             <button
               type="button"
               onClick={() => setIsModalOpen(false)}
@@ -386,6 +805,7 @@ export default function EmployeesPage() {
             >
               Cancel
             </button>
+
             <button
               type="submit"
               className="px-4 py-2 bg-[#B8862E] hover:bg-[#9E7124] text-xs font-semibold text-white rounded-lg shadow-sm"
@@ -395,7 +815,6 @@ export default function EmployeesPage() {
           </div>
         </form>
       </Modal>
-
       {/* View Employee Profile Modal */}
       {selectedEmp && (
         <Modal
@@ -450,3 +869,14 @@ export default function EmployeesPage() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+

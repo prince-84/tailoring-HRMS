@@ -13,6 +13,8 @@ use App\Http\Controllers\Api\PolicyController;
 use App\Http\Controllers\Api\ShiftController;
 use App\Http\Controllers\Api\RolePermissionController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\CompanyController;
+use App\Http\Controllers\Api\BranchController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -42,10 +44,14 @@ Route::middleware('auth:sanctum')->group(function () {
     // 4. Employees
     Route::apiResource('employees', EmployeeController::class);
 
-    // 5. Shifts
+    // 5. Companies
+    Route::get('/companies', [CompanyController::class, 'index']);
+    Route::get('/branches', [BranchController::class, 'index']);
+
+    // 6. Shifts
     Route::apiResource('shifts', ShiftController::class);
 
-    // 6. Attendance & Regularization
+    // 7. Attendance & Regularization
     Route::get('/attendance', [AttendanceController::class, 'index']);
     Route::post('/attendance/check-in', [AttendanceController::class, 'checkIn']);
     Route::post('/attendance/check-out', [AttendanceController::class, 'checkOut']);
@@ -53,7 +59,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/attendance/regularize', [AttendanceController::class, 'regularize']);
     Route::post('/attendance/regularizations/{regularization}/process', [AttendanceController::class, 'approveRegularization']);
 
-    // 7. Leave Management & Public Holidays
+    // 8. Leave Management & Public Holidays
     Route::get('/leave/types', [LeaveController::class, 'types']);
     Route::get('/leave/balances', [LeaveController::class, 'balances']);
     Route::get('/leave/applications', [LeaveController::class, 'applications']);
@@ -61,18 +67,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/leave/applications/{leaveApplication}/process', [LeaveController::class, 'processApplication']);
     Route::get('/public-holidays', [LeaveController::class, 'publicHolidays']);
 
-    // 8. Compliance
+    // 9. Compliance
     Route::get('/compliance', [ComplianceController::class, 'index']);
     Route::post('/compliance', [ComplianceController::class, 'store']);
     Route::put('/compliance/{complianceDocument}', [ComplianceController::class, 'update']);
     Route::get('/compliance/alerts', [ComplianceController::class, 'alerts']);
 
-    // 9. Policies
+    // 10. Policies
     Route::get('/policies', [PolicyController::class, 'index']);
     Route::post('/policies', [PolicyController::class, 'store']);
     Route::post('/policies/{policy}/acknowledge', [PolicyController::class, 'acknowledge']);
 
-    // 10. Payroll & Gratuity
+    // 11. Payroll & Gratuity
     Route::get('/payroll/summary', [PayrollController::class, 'summary']);
     Route::get('/payroll/runs', [PayrollController::class, 'runs']);
     Route::get('/payroll/runs/{payrollRun}', [PayrollController::class, 'runDetails']);
@@ -81,13 +87,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/payroll/my-payslips', [PayrollController::class, 'myPayslips']);
     Route::post('/payroll/gratuity/calculate', [PayrollController::class, 'calculateGratuity']);
 
-    // 11. Roles & Permissions
+    // 12. Roles & Permissions
     Route::get('/roles', [RolePermissionController::class, 'roles']);
     Route::get('/permissions', [RolePermissionController::class, 'permissions']);
     Route::put('/roles/{role}/permissions', [RolePermissionController::class, 'updateRolePermissions']);
 
-    // 12. Reports
+    // 13. Reports
     Route::get('/reports/employee-master', [ReportController::class, 'employeeMaster']);
     Route::get('/reports/attendance', [ReportController::class, 'attendanceReport']);
     Route::get('/reports/leaves', [ReportController::class, 'leaveReport']);
 });
+
+

@@ -4,11 +4,13 @@ namespace Database\Seeders;
 
 use App\Models\Attendance;
 use App\Models\Branch;
+use App\Models\Company;
 use App\Models\ComplianceDocument;
 use App\Models\Department;
 use App\Models\Designation;
 use App\Models\Employee;
 use App\Models\LeaveBalance;
+use App\Models\Location;
 use App\Models\LeaveType;
 use App\Models\PayrollRun;
 use App\Models\Payslip;
@@ -27,7 +29,54 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Create Branches
+        // 1. Create Companies & Locations
+        $companyBespoke = Company::create([
+            'name' => 'Bespoke Haute Couture Tailoring LLC',
+            'code' => 'BHC',
+            'address' => 'Business Bay, Dubai, UAE',
+            'city' => 'Dubai',
+            'phone' => '+971 4 398 2200',
+            'email' => 'info@tailoringhrms.ae',
+            'is_active' => true,
+        ]);
+
+        $companyAtelier = Company::create([
+            'name' => 'Bespoke Fashion Atelier FZ-LLC',
+            'code' => 'BFA',
+            'address' => 'Al Maryah Island, Abu Dhabi, UAE',
+            'city' => 'Abu Dhabi',
+            'phone' => '+971 2 445 1100',
+            'email' => 'atelier@tailoringhrms.ae',
+            'is_active' => true,
+        ]);
+
+        Location::create([
+            'company_id' => $companyBespoke->id,
+            'name' => 'Dubai Headquarters',
+            'code' => 'BHC-DXB',
+            'address' => 'Bay Square, Business Bay, Dubai, UAE',
+            'city' => 'Dubai',
+            'is_active' => true,
+        ]);
+
+        Location::create([
+            'company_id' => $companyBespoke->id,
+            'name' => 'Sharjah Tailoring Workshop',
+            'code' => 'BHC-SHJ',
+            'address' => 'Al Majaz, Sharjah, UAE',
+            'city' => 'Sharjah',
+            'is_active' => true,
+        ]);
+
+        Location::create([
+            'company_id' => $companyAtelier->id,
+            'name' => 'Abu Dhabi Atelier',
+            'code' => 'BFA-AUH',
+            'address' => 'Al Maryah Island, Abu Dhabi, UAE',
+            'city' => 'Abu Dhabi',
+            'is_active' => true,
+        ]);
+        // 2. Create Branches
         $branchDubai = Branch::create([
             'name' => 'Dubai Headquarters (Business Bay)',
             'code' => 'DXB-HQ',
@@ -58,7 +107,7 @@ class DatabaseSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        // 2. Create Roles
+        // 3. Create Roles
         $superAdminRole = Role::create([
             'name' => 'Super Admin',
             'slug' => 'super-admin',
@@ -87,7 +136,7 @@ class DatabaseSeeder extends Seeder
             'is_system' => true,
         ]);
 
-        // 3. Create Granular Permissions for 13 Modules
+        // 4. Create Granular Permissions for 13 Modules
         $modules = [
             'dashboard' => 'Dashboard Overview',
             'departments' => 'Departments Management',
@@ -150,7 +199,7 @@ class DatabaseSeeder extends Seeder
         $deptManagerRole->permissions()->sync($deptPermissionIds);
         $employeeRole->permissions()->sync($empPermissionIds);
 
-        // 4. Create Shifts
+        // 5. Create Shifts
         $shiftGeneral = Shift::create([
             'name' => 'General Corporate Shift (9AM - 6PM)',
             'code' => 'GEN-01',
@@ -187,7 +236,7 @@ class DatabaseSeeder extends Seeder
             'status' => 'active',
         ]);
 
-        // 5. Create Departments
+        // 6. Create Departments
         $deptExec = Department::create(['branch_id' => $branchDubai->id, 'name' => 'Executive Leadership', 'code' => 'EXEC', 'description' => 'C-Suite and executive steering board', 'status' => 'active']);
         $deptHR = Department::create(['branch_id' => $branchDubai->id, 'name' => 'Human Resources & Talent', 'code' => 'HR', 'description' => 'Talent acquisition, payroll, compliance, and staff welfare', 'status' => 'active']);
         $deptTailoring = Department::create(['branch_id' => $branchSharjah->id, 'name' => 'Bespoke Tailoring & Haute Couture', 'code' => 'TAILOR', 'description' => 'Master cutting, bespoke stitching, pattern making, and quality control', 'status' => 'active']);
@@ -195,7 +244,7 @@ class DatabaseSeeder extends Seeder
         $deptSales = Department::create(['branch_id' => $branchAbudhabi->id, 'name' => 'Retail & Client Relations', 'code' => 'RETAIL', 'description' => 'Luxury boutique sales, VIP customer fitting, and order coordination', 'status' => 'active']);
         $deptFinance = Department::create(['branch_id' => $branchDubai->id, 'name' => 'Finance & Accounts', 'code' => 'FIN', 'description' => 'WPS banking, cost accounting, cashflow, and VAT filings', 'status' => 'active']);
 
-        // 6. Create Designations
+        // 7. Create Designations
         $desigCEO = Designation::create(['department_id' => $deptExec->id, 'title' => 'Chief Executive Officer', 'code' => 'CEO', 'level_grade' => 'Executive']);
         $desigHRD = Designation::create(['department_id' => $deptHR->id, 'title' => 'Director of Human Resources', 'code' => 'HR-DIR', 'level_grade' => 'Management']);
         $desigHRM = Designation::create(['department_id' => $deptHR->id, 'title' => 'HR Operations Specialist', 'code' => 'HR-SPEC', 'level_grade' => 'Senior']);
@@ -206,7 +255,7 @@ class DatabaseSeeder extends Seeder
         $desigBoutiqueMgr = Designation::create(['department_id' => $deptSales->id, 'title' => 'Luxury Boutique Manager', 'code' => 'BTQ-MGR', 'level_grade' => 'Management']);
         $desigFinSpecialist = Designation::create(['department_id' => $deptFinance->id, 'title' => 'Senior Payroll & WPS Accountant', 'code' => 'WPS-ACC', 'level_grade' => 'Senior']);
 
-        // 7. Create UAE Public Holidays (2026)
+        // 8. Create UAE Public Holidays (2026)
         $holidays = [
             ['name' => "New Year's Day", 'date' => '2026-01-01', 'days_count' => 1, 'year' => 2026, 'description' => 'Gregorian New Year public holiday'],
             ['name' => 'Eid Al Fitr Holiday', 'date' => '2026-03-20', 'days_count' => 4, 'year' => 2026, 'description' => 'Official Islamic Eid Al Fitr celebration (29 Ramadan - 3 Shawwal)'],
@@ -221,7 +270,7 @@ class DatabaseSeeder extends Seeder
             PublicHoliday::create($h);
         }
 
-        // 8. Create UAE Standard Leave Types
+        // 9. Create UAE Standard Leave Types
         $leaveAnnual = LeaveType::create(['name' => 'Annual Leave', 'code' => 'ANNUAL', 'days_per_year' => 30, 'is_paid' => true, 'paid_percentage' => 100, 'requires_attachment' => false, 'uae_law_type' => 'annual', 'description' => '30 calendar days per completed year of service as per UAE Labour Law (Federal Decree Law No. 33 of 2021)']);
         $leaveSick1 = LeaveType::create(['name' => 'Sick Leave (Full Pay)', 'code' => 'SICK-100', 'days_per_year' => 15, 'is_paid' => true, 'paid_percentage' => 100, 'requires_attachment' => true, 'uae_law_type' => 'sick_tier1', 'description' => 'First 15 days of sick leave with 100% full pay upon certified medical report']);
         $leaveSick2 = LeaveType::create(['name' => 'Sick Leave (Half Pay)', 'code' => 'SICK-50', 'days_per_year' => 30, 'is_paid' => true, 'paid_percentage' => 50, 'requires_attachment' => true, 'uae_law_type' => 'sick_tier2', 'description' => 'Next 30 days of sick leave with 50% half pay']);
@@ -232,7 +281,7 @@ class DatabaseSeeder extends Seeder
         $leaveHajj = LeaveType::create(['name' => 'Hajj Pilgrimage Leave', 'code' => 'HAJJ', 'days_per_year' => 30, 'is_paid' => false, 'paid_percentage' => 0, 'requires_attachment' => true, 'uae_law_type' => 'hajj', 'description' => 'Special unpaid leave granted once during full tenure (up to 30 days)']);
         $leaveUnpaid = LeaveType::create(['name' => 'Unpaid Leave (Discretionary)', 'code' => 'UNPAID', 'days_per_year' => 30, 'is_paid' => false, 'paid_percentage' => 0, 'requires_attachment' => false, 'uae_law_type' => 'unpaid', 'description' => 'Approved unpaid leave upon management discretion']);
 
-        // 9. Create Users & Employees
+        // 10. Create Users & Employees
         // Admin User
         $userAdmin = User::create([
             'name' => 'Sultan Al Marzooqi',
@@ -493,7 +542,7 @@ class DatabaseSeeder extends Seeder
             $allCreatedEmployees[] = $emp;
         }
 
-        // 10. Create Compliance Documents per Employee
+        // 11. Create Compliance Documents per Employee
         foreach ($allCreatedEmployees as $e) {
             // Emirates ID doc
             $eidStatus = 'valid';
@@ -589,7 +638,7 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // 11. Create Sample Attendances for Today & Recent Days
+        // 12. Create Sample Attendances for Today & Recent Days
         $today = Carbon::today();
         foreach ($allCreatedEmployees as $index => $e) {
             $statuses = ['present', 'present', 'present', 'late', 'present', 'present', 'on_leave', 'present', 'late', 'present'];
@@ -622,7 +671,7 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // 12. Create Policies
+        // 13. Create Policies
         $policyLeave = Policy::create([
             'title' => 'UAE Annual & Sick Leave Policy 2026',
             'category' => 'Leave Policy',
@@ -653,7 +702,7 @@ class DatabaseSeeder extends Seeder
             'created_by' => $userAdmin->id,
         ]);
 
-        // 13. Create Past Month Payroll Run & Payslips
+        // 14. Create Past Month Payroll Run & Payslips
         $prevMonth = Carbon::now()->subMonth();
         $payrollRun = PayrollRun::create([
             'batch_name' => 'Payroll Run — ' . $prevMonth->format('F Y'),
@@ -707,3 +756,7 @@ class DatabaseSeeder extends Seeder
         }
     }
 }
+
+
+
+

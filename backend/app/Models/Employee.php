@@ -20,14 +20,27 @@ class Employee extends Model
         'last_name',
         'email',
         'phone',
+        'home_phone',
+        'address',
         'gender',
         'date_of_birth',
         'nationality',
         'marital_status',
         'emirates_id_number',
         'passport_number',
+        'passport_issue_date',
+        'labour_card_id',
         'visa_type',
         'visa_expiry_date',
+        'father_name',
+        'religion',
+        'blood_group',
+        'emergency_contact_person',
+        'emergency_contact_number',
+        'emergency_contact_email',
+        'company_visa_mol_id',
+        'company_id',
+        'location_id',
         'designation_id',
         'department_id',
         'branch_id',
@@ -35,6 +48,8 @@ class Employee extends Model
         'reporting_to_id',
         'joining_date',
         'contract_type',
+        'employment_type',
+        'salary_transfer_method',
         'basic_salary',
         'housing_allowance',
         'transport_allowance',
@@ -47,6 +62,7 @@ class Employee extends Model
 
     protected $casts = [
         'date_of_birth' => 'date',
+        'passport_issue_date' => 'date',
         'visa_expiry_date' => 'date',
         'joining_date' => 'date',
         'basic_salary' => 'decimal:2',
@@ -58,6 +74,16 @@ class Employee extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
+
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class);
     }
 
     public function department(): BelongsTo
