@@ -97,8 +97,8 @@ class EmployeeController extends Controller
             'emergency_contact_number' => 'nullable|string|max:30',
             'emergency_contact_email' => 'nullable|email|max:255',
             'company_visa_mol_id' => 'nullable|string|max:100',
-            'company_id' => 'nullable|exists:companies,id',
-            'location_id' => 'nullable|exists:locations,id',
+            'company_id' => 'required|exists:companies,id',
+            'location_id' => 'required|exists:locations,id',
             'employment_type' => 'nullable|string|max:50',
             'salary_transfer_method' => 'nullable|string|max:100',
             'department_id' => 'required|exists:departments,id',
@@ -248,6 +248,7 @@ class EmployeeController extends Controller
         ]);
     }
 }
+
 
 
 
