@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { CalendarDays, Plus, Check, X, Palmtree, Thermometer, Flag, AlertCircle } from 'lucide-react';
 import DataTable, { Column } from '@/components/common/DataTable';
 import Badge from '@/components/common/Badge';
-import Modal from '@/components/common/Modal';
+import CreateLeaveRequestModal from '@/components/leave/CreateLeaveRequestModal';
 import api from '@/lib/api';
 import { showToast, confirmDialog, successAlert, errorAlert } from '@/lib/swal';
 
@@ -14,6 +14,7 @@ export default function LeavesPage() {
   const [applications, setApplications] = useState<any[]>([]);
   const [holidays, setHolidays] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [employees, setEmployees] = useState<any[]>([]);
 
   // Apply Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -28,16 +29,18 @@ export default function LeavesPage() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [typeRes, balRes, appRes, holRes] = await Promise.all([
-        api.get('/leave/types'),
-        api.get('/leave/balances'),
-        api.get('/leave/applications'),
-        api.get('/public-holidays'),
-      ]);
+      const [typeRes, balRes, appRes, holRes, employeeRes] = await Promise.all([
+      api.get('/leave/types'),
+      api.get('/leave/balances'),
+      api.get('/leave/applications'),
+      api.get('/public-holidays'),
+      api.get('/employees?per_page=100'),
+    ]);
       setTypes(typeRes.data.data || []);
       setBalances(balRes.data.data || []);
       setApplications(appRes.data.data.data || []);
       setHolidays(holRes.data.data || []);
+      setEmployees(employeeRes.data.data?.data || employeeRes.data.data || []);
     } catch {
       showToast('Could not load leave records', 'error');
     } finally {
@@ -49,15 +52,26 @@ export default function LeavesPage() {
     fetchData();
   }, []);
 
-  const handleApply = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleApply = async (values: {
+  leave_type_id: string;
+  start_date: string;
+  end_date: string;
+  reason: string;
+  emergency_contact: string;
+  }) => {
     try {
-      await api.post('/leave/apply', formData);
-      successAlert('Leave Application Submitted', 'Your request has been routed to your department manager.');
+      await api.post('/leave/apply', values);
+      successAlert(
+        'Leave Application Submitted',
+        'Your request has been routed to your department manager.'
+      );
       setIsModalOpen(false);
       fetchData();
     } catch (err: any) {
-      errorAlert('Application Failed', err.response?.data?.message || 'Please verify leave balance and dates.');
+      errorAlert(
+        'Application Failed',
+        err.response?.data?.message || 'Please verify leave balance and dates.'
+      );
     }
   };
 
@@ -235,92 +249,21 @@ export default function LeavesPage() {
       </div>
 
       {/* Apply Leave Modal */}
-      <Modal
-        isOpen={isModalOpen}
+      <CreateLeaveRequestModal  
+        open={isModalOpen}
+        employees={employees}
+        leaveTypes={types}
         onClose={() => setIsModalOpen(false)}
-        title="Submit Leave Application"
-        subtitle="Select leave category and date range."
-      >
-        <form onSubmit={handleApply} className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-[#18213A] mb-1">Leave Type *</label>
-            <select
-              required
-              value={formData.leave_type_id}
-              onChange={(e) => setFormData({ ...formData, leave_type_id: e.target.value })}
-              className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E]"
-            >
-              <option value="">Select Leave Type</option>
-              {types.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name} ({t.days_per_year} days/yr)
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-[#18213A] mb-1">Start Date *</label>
-              <input
-                type="date"
-                required
-                value={formData.start_date}
-                onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E]"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-[#18213A] mb-1">End Date *</label>
-              <input
-                type="date"
-                required
-                value={formData.end_date}
-                onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E]"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-[#18213A] mb-1">Emergency Contact Number</label>
-            <input
-              type="text"
-              value={formData.emergency_contact}
-              onChange={(e) => setFormData({ ...formData, emergency_contact: e.target.value })}
-              className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E]"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-[#18213A] mb-1">Reason for Leave *</label>
-            <textarea
-              required
-              rows={3}
-              value={formData.reason}
-              onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-              placeholder="Provide reason or travel destination..."
-              className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E]"
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={() => setIsModalOpen(false)}
-              className="px-4 py-2 bg-[#F2F4F8] text-xs font-semibold text-[#68708A] rounded-lg"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-[#B8862E] hover:bg-[#9E7124] text-xs font-semibold text-white rounded-lg shadow-sm"
-            >
-              Submit Application
-            </button>
-          </div>
-        </form>
-      </Modal>
+        onSubmit={(values) => {
+          handleApply({
+            leave_type_id: values.leaveType,
+            start_date: values.startDate,
+            end_date: values.endDate,
+            reason: values.description,
+            emergency_contact: '',
+          });
+        }}
+      />
     </div>
   );
 }
