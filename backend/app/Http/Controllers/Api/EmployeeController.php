@@ -111,6 +111,7 @@ class EmployeeController extends Controller
             'housing_allowance' => 'nullable|numeric|min:0',
             'transport_allowance' => 'nullable|numeric|min:0',
             'other_allowances' => 'nullable|numeric|min:0',
+            'standard_deductions' => 'nullable|numeric|min:0',
             'bank_name' => 'nullable|string|max:100',
             'iban' => 'nullable|string|max:50',
         ]);
@@ -147,6 +148,7 @@ class EmployeeController extends Controller
                 'housing_allowance' => $employee->housing_allowance,
                 'transport_allowance' => $employee->transport_allowance,
                 'other_allowances' => $employee->other_allowances,
+                'standard_deductions' => $validated['standard_deductions'] ?? 0,
                 'gross_salary' => $employee->total_gross_salary,
                 'bank_name' => $employee->bank_name,
                 'iban' => $employee->iban,
@@ -216,12 +218,28 @@ class EmployeeController extends Controller
             'housing_allowance' => 'nullable|numeric|min:0',
             'transport_allowance' => 'nullable|numeric|min:0',
             'other_allowances' => 'nullable|numeric|min:0',
+            'standard_deductions' => 'nullable|numeric|min:0',
             'bank_name' => 'nullable|string|max:100',
             'iban' => 'nullable|string|max:50',
             'status' => 'required|string',
         ]);
 
         $employee->update($validated);
+
+                $employee->salaryStructure()->updateOrCreate(
+            ['employee_id' => $employee->id],
+            [
+                'basic_salary' => $employee->basic_salary,
+                'housing_allowance' => $employee->housing_allowance,
+                'transport_allowance' => $employee->transport_allowance,
+                'other_allowances' => $employee->other_allowances,
+                'standard_deductions' => $validated['standard_deductions'] ?? 0,
+                'gross_salary' => $employee->total_gross_salary,
+                'bank_name' => $employee->bank_name,
+                'iban' => $employee->iban,
+                'effective_date' => $employee->joining_date,
+            ]
+        );
 
         if ($employee->user) {
             $employee->user->update([

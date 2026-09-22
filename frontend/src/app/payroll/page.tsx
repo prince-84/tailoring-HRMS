@@ -112,6 +112,15 @@ export default function PayrollPage() {
       ),
     },
     {
+      key: 'total_deductions',
+      header: 'Deductions (AED)',
+      render: (run) => (
+        <span className="font-mono text-xs text-[#C64550]">
+          AED {Number(run.total_deductions || 0).toLocaleString()}
+        </span>
+      ),
+    },
+    {
       key: 'total_net',
       header: 'Net Pay (AED)',
       render: (run) => (

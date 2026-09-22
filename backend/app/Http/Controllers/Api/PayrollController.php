@@ -112,7 +112,11 @@ class PayrollController extends Controller
         return DB::transaction(function () use ($month, $year, $request) {
             $periodStart = Carbon::create($year, $month, 1)->startOfMonth();
             $periodEnd = $periodStart->copy()->endOfMonth();
-            $employees = Employee::where('status', 'active')->get();
+            $employees = Employee::with('salaryStructure')->where('status', 'active')->get();
+
+            if ($employees->contains(fn ($employee) => $employee->salaryStructure === null)) {
+                throw new \RuntimeException('All active employees must have a Salary Structure before payroll can be generated.');
+            }
 
             $totalGross = 0;
             $totalAllowances = 0;
@@ -135,13 +139,15 @@ class PayrollController extends Controller
             ]);
 
             foreach ($employees as $e) {
-                $basic = $e->basic_salary;
-                $housing = $e->housing_allowance;
-                $transport = $e->transport_allowance;
-                $other = $e->other_allowances;
+                $salary = $e->salaryStructure;
+
+                $basic = $salary->basic_salary;
+                $housing = $salary->housing_allowance;
+                $transport = $salary->transport_allowance;
+                $other = $salary->other_allowances;
                 $allowances = $housing + $transport + $other;
-                $gross = $basic + $allowances;
-                $deductions = 0.00;
+                $gross = $salary->gross_salary;
+                $deductions = $salary->standard_deductions;
                 $net = $gross - $deductions;
 
                 $totalGross += $gross;
@@ -255,3 +261,6 @@ class PayrollController extends Controller
         ]);
     }
 }
+
+
+

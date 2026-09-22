@@ -1,25 +1,58 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Plus, UserPlus, Eye, Mail, Phone, MapPin, Building2, Briefcase } from 'lucide-react';
+import { UserPlus, Eye, Mail, Pencil } from 'lucide-react';
 import DataTable, { Column } from '@/components/common/DataTable';
 import Badge from '@/components/common/Badge';
 import Modal from '@/components/common/Modal';
 import api from '@/lib/api';
 import { showToast, successAlert, errorAlert } from '@/lib/swal';
 
+interface Employee {
+  id: number;
+  employee_code: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone?: string;
+  status: string;
+  basic_salary?: number | string;
+  housing_allowance?: number | string;
+  transport_allowance?: number | string;
+  other_allowances?: number | string;
+  nationality?: string;
+  visa_type?: string;
+  department?: { id: number; name: string; };
+  designation?: { id: number; title: string; };
+  branch?: { id: number; name: string; };
+  shift?: { id: number; name: string; };
+  company?: { id: number; name: string; };
+  location?: { id: number; name: string; };
+  emirates_id_number?: string;
+  passport_number?: string;
+  visa_expiry_date?: string;
+  bank_name?: string;
+}
+interface Department { id: number; name: string; }
+interface Designation { id: number; title: string; }
+interface Branch { id: number; name: string; }
+interface Shift { id: number; name: string; }
+interface Location { id: number; name: string; }
+interface Company { id: number; name: string; locations?: Location[]; }
+
 export default function EmployeesPage() {
-  const [employees, setEmployees] = useState<any[]>([]);
-  const [departments, setDepartments] = useState<any[]>([]);
-  const [designations, setDesignations] = useState<any[]>([]);
-  const [branches, setBranches] = useState<any[]>([]);
-  const [shifts, setShifts] = useState<any[]>([]);
-  const [companies, setCompanies] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [designations, setDesignations] = useState<Designation[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [shifts, setShifts] = useState<Shift[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedEmp, setSelectedEmp] = useState<any | null>(null);
+  const [editingEmployeeId, setEditingEmployeeId] = useState<number | null>(null);
+  const [selectedEmp, setSelectedEmp] = useState<Employee | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
   // Form State
@@ -44,6 +77,7 @@ export default function EmployeesPage() {
     housing_allowance: '',
     transport_allowance: '',
     other_allowances: '',
+    standard_deductions: '',
     bank_name: '',
     iban: 'AE',
     passport_issue_date: '',
@@ -67,8 +101,7 @@ export default function EmployeesPage() {
   });
 
   const fetchData = async () => {
-    setIsLoading(true);
-    try {
+  try {
       const [empRes, deptRes, desigRes, compRes, branchRes, shiftRes] = await Promise.all([
         api.get('/employees?per_page=100'),
         api.get('/departments'),
@@ -90,6 +123,63 @@ export default function EmployeesPage() {
     }
   };
 
+  const handleEdit = async (employeeId: number) => {
+  try {
+    const response = await api.get(`/employees/${employeeId}`);
+    const employee = response.data.data;
+    const salary = employee.salary_structure;
+
+    setFormData({
+      first_name: employee.first_name || '',
+      last_name: employee.last_name || '',
+      email: employee.email || '',
+      phone: employee.phone || '',
+      gender: employee.gender || 'Male',
+      nationality: employee.nationality || 'United Arab Emirates',
+      emirates_id_number: employee.emirates_id_number || '',
+      passport_number: employee.passport_number || '',
+      visa_type: employee.visa_type || 'Employment',
+      visa_expiry_date: employee.visa_expiry_date || '',
+      department_id: employee.department_id?.toString() || '',
+      designation_id: employee.designation_id?.toString() || '',
+      branch_id: employee.branch_id?.toString() || '',
+      shift_id: employee.shift_id?.toString() || '',
+      joining_date: employee.joining_date || '',
+      contract_type: employee.contract_type || 'Limited',
+      basic_salary: salary?.basic_salary?.toString() || '',
+      housing_allowance: salary?.housing_allowance?.toString() || '',
+      transport_allowance: salary?.transport_allowance?.toString() || '',
+      other_allowances: salary?.other_allowances?.toString() || '',
+      standard_deductions: salary?.standard_deductions?.toString() || '',
+      bank_name: salary?.bank_name || employee.bank_name || '',
+      iban: salary?.iban || employee.iban || 'AE',
+      passport_issue_date: employee.passport_issue_date || '',
+      labour_card_id: employee.labour_card_id || '',
+      home_phone: employee.home_phone || '',
+      address: employee.address || '',
+      father_name: employee.father_name || '',
+      religion: employee.religion || '',
+      blood_group: employee.blood_group || '',
+      emergency_contact_person: employee.emergency_contact_person || '',
+      emergency_contact_number: employee.emergency_contact_number || '',
+      emergency_contact_email: employee.emergency_contact_email || '',
+      company_visa_mol_id: employee.company_visa_mol_id || '',
+      company_id: employee.company_id?.toString() || '',
+      location_id: employee.location_id?.toString() || '',
+      employment_type: employee.employment_type || '',
+      salary_transfer_method: employee.salary_transfer_method || '',
+      marital_status: employee.marital_status || '',
+      date_of_birth: employee.date_of_birth || '',
+      status: employee.status || 'active',
+    });
+
+    setEditingEmployeeId(employeeId);
+    setIsModalOpen(true);
+  } catch {
+    errorAlert('Error Loading Employee', 'Could not load the employee details for editing.');
+  }
+  };
+
   const selectedCompany = companies.find((company) => String(company.id) === String(formData.company_id));
   const locations = selectedCompany?.locations || [];
 
@@ -98,22 +188,68 @@ export default function EmployeesPage() {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const loadData = async () => {
     try {
-      await api.post('/employees', formData);
-      successAlert('Employee Enrolled', 'New employee profile and WPS salary structure created successfully.');
-      setIsModalOpen(false);
-      fetchData();
-    } catch (err: any) {
-      errorAlert('Error Creating Employee', err.response?.data?.message || 'Please check form input fields.');
+      const [empRes, deptRes, desigRes, compRes, branchRes, shiftRes] = await Promise.all([
+        api.get('/employees?per_page=100'),
+        api.get('/departments'),
+        api.get('/designations'),
+        api.get('/companies'),
+        api.get('/branches'),
+        api.get('/shifts'),
+      ]);
+
+      setEmployees(empRes.data.data.data || []);
+      setDepartments(deptRes.data.data || []);
+      setDesignations(desigRes.data.data || []);
+      setCompanies(compRes.data.data || []);
+      setBranches(branchRes.data.data || []);
+      setShifts(shiftRes.data.data || []);
+    } catch {
+      showToast('Could not load employees', 'error');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const columns: Column<any>[] = [
+  void loadData();
+}, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  try {
+    if (editingEmployeeId) {
+      await api.put(`/employees/${editingEmployeeId}`, formData);
+
+      successAlert(
+        'Employee Updated',
+        'Employee profile and WPS salary structure updated successfully.'
+      );
+    } else {
+      await api.post('/employees', formData);
+
+      successAlert(
+        'Employee Enrolled',
+        'New employee profile and WPS salary structure created successfully.'
+      );
+    }
+
+    setIsModalOpen(false);
+    setEditingEmployeeId(null);
+    fetchData();
+  } catch (err: unknown) {
+    const message =
+      err instanceof Error ? err.message : 'Please check form input fields.';
+
+    errorAlert(
+      editingEmployeeId ? 'Error Updating Employee' : 'Error Creating Employee',
+      message
+    );
+  }
+};
+
+  const columns: Column<Employee>[] = [
     {
       key: 'employee_code',
       header: 'Code',
@@ -193,6 +329,7 @@ export default function EmployeesPage() {
       header: 'Action',
       align: 'right',
       render: (emp) => (
+      <div className="flex items-center justify-end gap-1">
         <button
           onClick={() => {
             setSelectedEmp(emp);
@@ -203,7 +340,18 @@ export default function EmployeesPage() {
         >
           <Eye className="w-4 h-4" />
         </button>
-      ),
+
+        <button
+          onClick={() => {
+            void handleEdit(emp.id);
+          }}
+          className="p-1.5 text-[#68708A] hover:text-[#152244] hover:bg-[#F2F4F8] rounded-lg transition"
+          title="Edit Employee"
+        >
+          <Pencil className="w-4 h-4" />
+        </button>
+      </div>
+    ),
     },
   ];
 
@@ -217,7 +365,10 @@ export default function EmployeesPage() {
         isLoading={isLoading}
         actionButton={
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              setEditingEmployeeId(null);
+              setIsModalOpen(true);
+            }}
             className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#B8862E] hover:bg-[#9E7124] text-white rounded-lg text-xs font-semibold shadow-xs transition"
           >
             <UserPlus className="w-3.5 h-3.5" />
@@ -229,9 +380,16 @@ export default function EmployeesPage() {
       {/* Add Employee Modal */}
       <Modal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Enroll New Employee"
-        subtitle="Complete employee, employment, compliance and WPS details."
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingEmployeeId(null);
+        }}
+        title={editingEmployeeId ? 'Edit Employee' : 'Enroll New Employee'}
+        subtitle={
+          editingEmployeeId
+            ? 'Update employee, employment, compliance and WPS salary details.'
+            : 'Complete employee, employment, compliance and WPS details.'
+        }
         maxWidth="xl"
       >
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -719,7 +877,7 @@ export default function EmployeesPage() {
                 Salary Structure (AED)
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
                 <div>
                   <label className="block text-[11px] text-[#68708A] mb-1">Basic *</label>
                   <input
@@ -772,6 +930,18 @@ export default function EmployeesPage() {
                     className="w-full px-2 py-1.5 bg-white border border-[#E6E9F0] rounded text-xs"
                   />
                 </div>
+                <div>
+                  <label className="block text-[11px] text-[#68708A] mb-1">Deductions</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={formData.standard_deductions}
+                    onChange={(e) => setFormData({ ...formData, standard_deductions: e.target.value })}
+                    className="w-full px-2 py-1.5 bg-white border border-[#E6E9F0] rounded text-xs"
+                  />
+                </div>
               </div>
             </div>
           </section>
@@ -810,7 +980,7 @@ export default function EmployeesPage() {
               type="submit"
               className="px-4 py-2 bg-[#B8862E] hover:bg-[#9E7124] text-xs font-semibold text-white rounded-lg shadow-sm"
             >
-              Create Employee Profile
+              {editingEmployeeId ? 'Save & Update Employee' : 'Create Employee Profile'}
             </button>
           </div>
         </form>

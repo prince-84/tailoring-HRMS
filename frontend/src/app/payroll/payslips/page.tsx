@@ -227,13 +227,11 @@ export default function PayslipsPage() {
                   <span className="text-xs font-bold text-[#C64550] uppercase tracking-wider block border-b border-[#E6E9F0] pb-1">
                     Deductions (AED)
                   </span>
-                  <div className="flex justify-between text-xs mt-2">
-                    <span className="text-[#68708A]">Absence / Unpaid Days</span>
-                    <span className="font-bold text-[#18213A]">AED 0.00</span>
-                  </div>
-                  <div className="flex justify-between text-xs mt-1">
-                    <span className="text-[#68708A]">Salary Advance / Loans</span>
-                    <span className="font-bold text-[#18213A]">AED 0.00</span>
+                    <div className="flex justify-between text-xs mt-2">
+                    <span className="text-[#68708A]">Standard Deductions</span>
+                    <span className="font-bold text-[#18213A]">
+                      AED {Number(selectedSlip.deductions_amount || 0).toLocaleString()}
+                    </span>
                   </div>
                 </div>
 
