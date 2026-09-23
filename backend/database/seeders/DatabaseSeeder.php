@@ -50,7 +50,7 @@ class DatabaseSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        Location::create([
+        $locationDubai = Location::create([
             'company_id' => $companyBespoke->id,
             'name' => 'Dubai Headquarters',
             'code' => 'BHC-DXB',
@@ -59,7 +59,7 @@ class DatabaseSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        Location::create([
+        $locationSharjah = Location::create([
             'company_id' => $companyBespoke->id,
             'name' => 'Sharjah Tailoring Workshop',
             'code' => 'BHC-SHJ',
@@ -68,7 +68,7 @@ class DatabaseSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        Location::create([
+        $locationAbuDhabi = Location::create([
             'company_id' => $companyAtelier->id,
             'name' => 'Abu Dhabi Atelier',
             'code' => 'BFA-AUH',
@@ -312,6 +312,8 @@ class DatabaseSeeder extends Seeder
             'designation_id' => $desigCEO->id,
             'department_id' => $deptExec->id,
             'branch_id' => $branchDubai->id,
+            'company_id' => $companyBespoke->id,
+            'location_id' => $locationDubai->id,
             'shift_id' => $shiftGeneral->id,
             'joining_date' => '2018-01-15',
             'contract_type' => 'Unlimited',
@@ -354,6 +356,8 @@ class DatabaseSeeder extends Seeder
             'designation_id' => $desigHRD->id,
             'department_id' => $deptHR->id,
             'branch_id' => $branchDubai->id,
+            'company_id' => $companyBespoke->id,
+            'location_id' => $locationDubai->id,
             'shift_id' => $shiftGeneral->id,
             'reporting_to_id' => $empAdmin->id,
             'joining_date' => '2020-03-01',
@@ -397,6 +401,8 @@ class DatabaseSeeder extends Seeder
             'designation_id' => $desigMasterTailor->id,
             'department_id' => $deptTailoring->id,
             'branch_id' => $branchSharjah->id,
+            'company_id' => $companyBespoke->id,
+            'location_id' => $locationSharjah->id,
             'shift_id' => $shiftMorning->id,
             'reporting_to_id' => $empAdmin->id,
             'joining_date' => '2021-06-10',
@@ -492,13 +498,26 @@ class DatabaseSeeder extends Seeder
         $allCreatedEmployees = [$empAdmin, $empHR, $empTariq];
 
         $codeSeq = 1004;
+
         foreach ($demoEmployeesData as $data) {
+            $companyId = $data['branch'] === $branchAbudhabi->id
+                ? $companyAtelier->id
+                : $companyBespoke->id;
+
+            $locationId = match ($data['branch']) {
+                $branchAbudhabi->id => $locationAbuDhabi->id,
+                $branchSharjah->id => $locationSharjah->id,
+                default => $locationDubai->id,
+            };
+
             $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
                 'password' => Hash::make('password'),
                 'role_id' => $data['role'],
                 'branch_id' => $data['branch'],
+                'company_id' => $companyId,
+                'location_id' => $locationId,
                 'phone' => $data['phone'],
                 'status' => 'active',
                 'is_active' => true,
@@ -526,6 +545,8 @@ class DatabaseSeeder extends Seeder
                 'designation_id' => $data['desig'],
                 'department_id' => $data['dept'],
                 'branch_id' => $data['branch'],
+                'company_id' => $companyId,
+                'location_id' => $locationId,
                 'shift_id' => $data['shift'],
                 'reporting_to_id' => $empAdmin->id,
                 'joining_date' => $data['join'],
@@ -643,7 +664,7 @@ class DatabaseSeeder extends Seeder
         foreach ($allCreatedEmployees as $index => $e) {
             $statuses = ['present', 'present', 'present', 'late', 'present', 'present', 'on_leave', 'present', 'late', 'present'];
             $status = $statuses[$index % count($statuses)];
-            
+
             $checkIn = '08:55:00';
             $lateMin = 0;
             if ($status === 'late') {
