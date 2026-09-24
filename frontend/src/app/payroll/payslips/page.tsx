@@ -168,7 +168,11 @@ export default function PayslipsPage() {
             <div className="grid grid-cols-3 gap-3 p-3.5 bg-[#F2F4F8] rounded-xl text-xs">
               <div>
                 <span className="text-[#9AA1B5] block">Employee Name</span>
-                <span className="font-bold text-[#18213A]">{selectedSlip.employee?.full_name}</span>
+                <span className="font-bold text-[#18213A]">
+                  {[selectedSlip.employee?.first_name, selectedSlip.employee?.last_name]
+                    .filter(Boolean)
+                    .join(' ') || 'Unknown'}
+                </span>
               </div>
               <div>
                 <span className="text-[#9AA1B5] block">Designation</span>

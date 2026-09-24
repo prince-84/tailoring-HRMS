@@ -40,6 +40,53 @@ interface Shift { id: number; name: string; }
 interface Location { id: number; name: string; }
 interface Company { id: number; name: string; locations?: Location[]; }
 
+const emptyFormData = {
+  first_name: '',
+  last_name: '',
+  email: '',
+  phone: '',
+  gender: 'Male',
+  nationality: 'United Arab Emirates',
+  emirates_id_number: '784-',
+  passport_number: '',
+  visa_type: 'Employment',
+  visa_expiry_date: '',
+  department_id: '',
+  designation_id: '',
+  branch_id: '',
+  shift_id: '',
+  joining_date: '',
+  contract_type: 'Limited',
+  basic_salary: '',
+  housing_allowance: '',
+  transport_allowance: '',
+  other_allowances: '',
+  standard_deductions: '',
+  bank_name: '',
+  iban: 'AE',
+  passport_issue_date: '',
+  labour_card_id: '',
+  home_phone: '',
+  address: '',
+  father_name: '',
+  religion: '',
+  blood_group: '',
+  emergency_contact_person: '',
+  emergency_contact_number: '',
+  emergency_contact_email: '',
+  company_visa_mol_id: '',
+  company_id: '',
+  location_id: '',
+  employment_type: '',
+  salary_transfer_method: '',
+  marital_status: '',
+  date_of_birth: '',
+  status: 'active',
+};
+
+const formatDateForInput = (value?: string | null) =>
+  value ? value.slice(0, 10) : '';
+
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -56,49 +103,7 @@ export default function EmployeesPage() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
   // Form State
-  const [formData, setFormData] = useState({
-    first_name: '',
-    last_name: '',
-    email: '',
-    phone: '',
-    gender: 'Male',
-    nationality: 'United Arab Emirates',
-    emirates_id_number: '784-',
-    passport_number: '',
-    visa_type: 'Employment',
-    visa_expiry_date: '',
-    department_id: '',
-    designation_id: '',
-    branch_id: '',
-    shift_id: '',
-    joining_date: new Date().toISOString().slice(0, 10),
-    contract_type: 'Limited',
-    basic_salary: '',
-    housing_allowance: '',
-    transport_allowance: '',
-    other_allowances: '',
-    standard_deductions: '',
-    bank_name: '',
-    iban: 'AE',
-    passport_issue_date: '',
-    labour_card_id: '',
-    home_phone: '',
-    address: '',
-    father_name: '',
-    religion: '',
-    blood_group: '',
-    emergency_contact_person: '',
-    emergency_contact_number: '',
-    emergency_contact_email: '',
-    company_visa_mol_id: '',
-    company_id: '',
-    location_id: '',
-    employment_type: '',
-    salary_transfer_method: '',
-    marital_status: '',
-    date_of_birth: '',
-    status: 'active',
-  });
+  const [formData, setFormData] = useState(emptyFormData);
 
   const fetchData = async () => {
   try {
@@ -139,12 +144,12 @@ export default function EmployeesPage() {
       emirates_id_number: employee.emirates_id_number || '',
       passport_number: employee.passport_number || '',
       visa_type: employee.visa_type || 'Employment',
-      visa_expiry_date: employee.visa_expiry_date || '',
+      visa_expiry_date: formatDateForInput(employee.visa_expiry_date),
       department_id: employee.department_id?.toString() || '',
       designation_id: employee.designation_id?.toString() || '',
       branch_id: employee.branch_id?.toString() || '',
       shift_id: employee.shift_id?.toString() || '',
-      joining_date: employee.joining_date || '',
+      joining_date: formatDateForInput(employee.joining_date),
       contract_type: employee.contract_type || 'Limited',
       basic_salary: salary?.basic_salary?.toString() || '',
       housing_allowance: salary?.housing_allowance?.toString() || '',
@@ -153,7 +158,7 @@ export default function EmployeesPage() {
       standard_deductions: salary?.standard_deductions?.toString() || '',
       bank_name: salary?.bank_name || employee.bank_name || '',
       iban: salary?.iban || employee.iban || 'AE',
-      passport_issue_date: employee.passport_issue_date || '',
+      passport_issue_date: formatDateForInput(employee.passport_issue_date),
       labour_card_id: employee.labour_card_id || '',
       home_phone: employee.home_phone || '',
       address: employee.address || '',
@@ -169,7 +174,7 @@ export default function EmployeesPage() {
       employment_type: employee.employment_type || '',
       salary_transfer_method: employee.salary_transfer_method || '',
       marital_status: employee.marital_status || '',
-      date_of_birth: employee.date_of_birth || '',
+      date_of_birth: formatDateForInput(employee.date_of_birth),
       status: employee.status || 'active',
     });
 
@@ -238,15 +243,30 @@ export default function EmployeesPage() {
     setIsModalOpen(false);
     setEditingEmployeeId(null);
     fetchData();
-  } catch (err: unknown) {
-    const message =
-      err instanceof Error ? err.message : 'Please check form input fields.';
+    } catch (err: unknown) {
+  const axiosError = err as {
+    response?: {
+      data?: {
+        message?: string;
+        errors?: Record<string, string[]>;
+      };
+    };
+  };
 
-    errorAlert(
-      editingEmployeeId ? 'Error Updating Employee' : 'Error Creating Employee',
-      message
-    );
-  }
+  const validationErrors = axiosError.response?.data?.errors;
+
+  const message = validationErrors
+    ? Object.entries(validationErrors)
+        .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+        .join('\n')
+    : axiosError.response?.data?.message ||
+      'Please check form input fields.';
+
+  errorAlert(
+    editingEmployeeId ? 'Error Updating Employee' : 'Error Creating Employee',
+    message
+  );
+}
 };
 
   const columns: Column<Employee>[] = [
@@ -366,6 +386,7 @@ export default function EmployeesPage() {
         actionButton={
           <button
             onClick={() => {
+              setFormData(emptyFormData);
               setEditingEmployeeId(null);
               setIsModalOpen(true);
             }}
