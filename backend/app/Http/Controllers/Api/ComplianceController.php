@@ -46,7 +46,7 @@ class ComplianceController extends Controller
     {
         $validated = $request->validate([
             'employee_id' => 'required|exists:employees,id',
-            'document_type' => 'required|in:Passport,Visa,Emirates ID,Labour Card,Medical Insurance,Other',
+            'document_type' => 'required|in:Passport,Visa,Emirates ID,Labour Card,Medical Insurance,Labour Contract,Other',
             'document_number' => 'required|string|max:100',
             'issue_date' => 'nullable|date',
             'expiry_date' => 'required|date',
@@ -77,7 +77,7 @@ class ComplianceController extends Controller
     public function update(Request $request, ComplianceDocument $complianceDocument): JsonResponse
     {
         $validated = $request->validate([
-            'document_type' => 'required|in:Passport,Visa,Emirates ID,Labour Card,Medical Insurance,Other',
+            'document_type' => 'required|in:Passport,Visa,Emirates ID,Labour Card,Medical Insurance,Labour Contract,Other',
             'document_number' => 'required|string|max:100',
             'issue_date' => 'nullable|date',
             'expiry_date' => 'required|date',
@@ -127,3 +127,4 @@ class ComplianceController extends Controller
         ]);
     }
 }
+

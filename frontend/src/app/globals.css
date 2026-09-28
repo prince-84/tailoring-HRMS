@@ -86,3 +86,49 @@
   padding: 10px 24px !important;
   font-weight: 500 !important;
 }
+
+@media print {
+  @page {
+    margin: 0;
+  }
+
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .print-payslip,
+  .print-payslip * {
+    visibility: visible !important;
+  }
+
+  .print-payslip {
+    position: static !important;
+    inset: auto !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 24px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+  }
+
+  .print-payslip .print-hidden {
+    display: none !important;
+  }
+
+  .print-payslip-section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+

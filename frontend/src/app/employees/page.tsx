@@ -8,6 +8,17 @@ import Modal from '@/components/common/Modal';
 import api from '@/lib/api';
 import { showToast, successAlert, errorAlert } from '@/lib/swal';
 
+interface ComplianceDocument {
+  id: number;
+  document_type: string;
+  document_number: string;
+  issue_date?: string | null;
+  expiry_date: string;
+  issuing_authority?: string | null;
+  sponsor_name?: string | null;
+  status: string;
+}
+
 interface Employee {
   id: number;
   employee_code: string;
@@ -32,6 +43,7 @@ interface Employee {
   passport_number?: string;
   visa_expiry_date?: string;
   bank_name?: string;
+    compliance_documents?: ComplianceDocument[];
 }
 interface Department { id: number; name: string; }
 interface Designation { id: number; title: string; }
@@ -82,6 +94,38 @@ const emptyFormData = {
   marital_status: '',
   date_of_birth: '',
   status: 'active',
+    compliance_documents: {
+      passport: {
+        document_number: '',
+        issue_date: '',
+        expiry_date: '',
+      },
+      emirates_id: {
+        document_number: '',
+        issue_date: '',
+        expiry_date: '',
+      },
+      visa: {
+        document_number: '',
+        issue_date: '',
+        expiry_date: '',
+      },
+      labour_card: {
+        document_number: '',
+        issue_date: '',
+        expiry_date: '',
+      },
+      labour_contract: {
+        document_number: '',
+        issue_date: '',
+        expiry_date: '',
+      },
+      health_insurance: {
+        document_number: '',
+        issue_date: '',
+        expiry_date: '',
+      },
+    },
 };
 
 const formatDateForInput = (value?: string | null) =>
@@ -133,6 +177,17 @@ export default function EmployeesPage() {
     const response = await api.get(`/employees/${employeeId}`);
     const employee = response.data.data;
     const salary = employee.salary_structure;
+      const complianceDocuments = employee.compliance_documents || [];
+      const getComplianceDocument = (documentType: string) =>
+        complianceDocuments.find((document: ComplianceDocument) => document.document_type === documentType);
+
+      const passportDocument = getComplianceDocument('Passport');
+      const emiratesIdDocument = getComplianceDocument('Emirates ID');
+      const visaDocument = getComplianceDocument('Visa');
+      const labourCardDocument = getComplianceDocument('Labour Card');
+      const labourContractDocument = getComplianceDocument('Labour Contract');
+      const healthInsuranceDocument = getComplianceDocument('Medical Insurance');
+
 
     setFormData({
       first_name: employee.first_name || '',
@@ -175,7 +230,39 @@ export default function EmployeesPage() {
       salary_transfer_method: employee.salary_transfer_method || '',
       marital_status: employee.marital_status || '',
       date_of_birth: formatDateForInput(employee.date_of_birth),
-      status: employee.status || 'active',
+        status: employee.status || 'active',
+        compliance_documents: {
+          passport: {
+            document_number: passportDocument?.document_number || '',
+            issue_date: formatDateForInput(passportDocument?.issue_date || employee.passport_issue_date),
+            expiry_date: formatDateForInput(passportDocument?.expiry_date),
+          },
+          emirates_id: {
+            document_number: emiratesIdDocument?.document_number || '',
+            issue_date: formatDateForInput(emiratesIdDocument?.issue_date),
+            expiry_date: formatDateForInput(emiratesIdDocument?.expiry_date),
+          },
+          visa: {
+            document_number: visaDocument?.document_number || '',
+            issue_date: formatDateForInput(visaDocument?.issue_date),
+            expiry_date: formatDateForInput(visaDocument?.expiry_date),
+          },
+          labour_card: {
+            document_number: labourCardDocument?.document_number || '',
+            issue_date: formatDateForInput(labourCardDocument?.issue_date),
+            expiry_date: formatDateForInput(labourCardDocument?.expiry_date),
+          },
+          labour_contract: {
+            document_number: labourContractDocument?.document_number || '',
+            issue_date: formatDateForInput(labourContractDocument?.issue_date),
+            expiry_date: formatDateForInput(labourContractDocument?.expiry_date),
+          },
+          health_insurance: {
+            document_number: healthInsuranceDocument?.document_number || '',
+            issue_date: formatDateForInput(healthInsuranceDocument?.issue_date),
+            expiry_date: formatDateForInput(healthInsuranceDocument?.expiry_date),
+          },
+        },
     });
 
     setEditingEmployeeId(employeeId);
@@ -223,16 +310,43 @@ export default function EmployeesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
 
+    const complianceDocumentTypeMap = {
+      passport: 'Passport',
+      emirates_id: 'Emirates ID',
+      visa: 'Visa',
+      labour_card: 'Labour Card',
+      labour_contract: 'Labour Contract',
+      health_insurance: 'Medical Insurance',
+    } as const;
+
+    const compliance_documents = Object.entries(formData.compliance_documents).map(([key, document]) => {
+      if (!document.document_number && !document.issue_date && !document.expiry_date) {
+        return null;
+      }
+
+      return {
+        document_type: complianceDocumentTypeMap[key as keyof typeof complianceDocumentTypeMap],
+        document_number: document.document_number,
+        issue_date: document.issue_date || null,
+        expiry_date: document.expiry_date,
+      };
+    }).filter((document): document is NonNullable<typeof document> => document !== null);
+
+    const payload = {
+      ...formData,
+      compliance_documents,
+    };
+
   try {
     if (editingEmployeeId) {
-      await api.put(`/employees/${editingEmployeeId}`, formData);
+      await api.put(`/employees/${editingEmployeeId}`, payload);
 
       successAlert(
         'Employee Updated',
         'Employee profile and WPS salary structure updated successfully.'
       );
     } else {
-      await api.post('/employees', formData);
+      await api.post('/employees', payload);
 
       successAlert(
         'Employee Enrolled',
@@ -447,9 +561,8 @@ export default function EmployeesPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[#18213A] mb-1">Employee Status *</label>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Employee Status</label>
                 <select
-                  required
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                   className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
@@ -473,9 +586,8 @@ export default function EmployeesPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[#18213A] mb-1">Gender *</label>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Gender</label>
                 <select
-                  required
                   value={formData.gender}
                   onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                   className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
@@ -487,10 +599,9 @@ export default function EmployeesPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[#18213A] mb-1">Date of Joining *</label>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Date of Joining</label>
                 <input
                   type="date"
-                  required
                   value={formData.joining_date}
                   onChange={(e) => setFormData({ ...formData, joining_date: e.target.value })}
                   className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
@@ -513,10 +624,9 @@ export default function EmployeesPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[#18213A] mb-1">Country *</label>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Country</label>
                 <input
                   type="text"
-                  required
                   value={formData.nationality}
                   onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
                   placeholder="e.g. United Arab Emirates"
@@ -566,10 +676,9 @@ export default function EmployeesPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[#18213A] mb-1">Phone *</label>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Phone</label>
                 <input
                   type="text"
-                  required
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   placeholder="+971 50 000 0000"
@@ -689,9 +798,8 @@ export default function EmployeesPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[#18213A] mb-1">Company *</label>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Company</label>
                 <select
-                  required
                   value={formData.company_id}
                   onChange={(e) => handleCompanyChange(e.target.value)}
                   className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
@@ -706,9 +814,8 @@ export default function EmployeesPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[#18213A] mb-1">Location *</label>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Location</label>
                 <select
-                  required
                   value={formData.location_id}
                   onChange={(e) => setFormData({ ...formData, location_id: e.target.value })}
                   disabled={!formData.company_id}
@@ -726,9 +833,8 @@ export default function EmployeesPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[#18213A] mb-1">Department *</label>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Department</label>
                 <select
-                  required
                   value={formData.department_id}
                   onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
                   className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
@@ -743,9 +849,8 @@ export default function EmployeesPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[#18213A] mb-1">Designation *</label>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Designation</label>
                 <select
-                  required
                   value={formData.designation_id}
                   onChange={(e) => setFormData({ ...formData, designation_id: e.target.value })}
                   className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
@@ -760,9 +865,8 @@ export default function EmployeesPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[#18213A] mb-1">Contract Type *</label>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Contract Type</label>
                 <select
-                  required
                   value={formData.contract_type}
                   onChange={(e) => setFormData({ ...formData, contract_type: e.target.value })}
                   className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
@@ -803,9 +907,8 @@ export default function EmployeesPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[#18213A] mb-1">Branch *</label>
+                <label className="block text-xs font-medium text-[#18213A] mb-1">Branch</label>
                 <select
-                  required
                   value={formData.branch_id}
                   onChange={(e) => setFormData({ ...formData, branch_id: e.target.value })}
                   className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
@@ -836,6 +939,93 @@ export default function EmployeesPage() {
               </div>
             </div>
           </section>
+
+            {/* Compliance & Documents */}
+            <section className="border-t border-[#E6E9F0] pt-5">
+              <div className="mb-3">
+                <h3 className="text-sm font-bold text-[#18213A]">Compliance & Documents</h3>
+                <p className="text-[11px] text-[#68708A] mt-0.5">
+                  Document details and expiry dates used for employee compliance tracking and alerts.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {([
+                  ['passport', 'Passport'],
+                  ['emirates_id', 'Emirates ID'],
+                  ['visa', 'Visa'],
+                  ['labour_card', 'Labour Card'],
+                  ['labour_contract', 'Labour Contract'],
+                  ['health_insurance', 'Health Insurance'],
+                ] as const).map(([key, label]) => (
+                  <div key={key} className="rounded-xl border border-[#E6E9F0] p-3">
+                    <p className="text-xs font-bold text-[#18213A] mb-2">{label}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-[11px] text-[#68708A] mb-1">Document Number</label>
+                        <input
+                          value={formData.compliance_documents[key].document_number}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              compliance_documents: {
+                                ...formData.compliance_documents,
+                                [key]: {
+                                  ...formData.compliance_documents[key],
+                                  document_number: e.target.value,
+                                },
+                              },
+                            })
+                          }
+                          className="w-full rounded-lg border border-[#D9DEE8] px-3 py-2 text-xs outline-none focus:border-[#B8862E] focus:ring-1 focus:ring-[#B8862E]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] text-[#68708A] mb-1">Issue Date</label>
+                        <input
+                          type="date"
+                          value={formData.compliance_documents[key].issue_date}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              compliance_documents: {
+                                ...formData.compliance_documents,
+                                [key]: {
+                                  ...formData.compliance_documents[key],
+                                  issue_date: e.target.value,
+                                },
+                              },
+                            })
+                          }
+                          className="w-full rounded-lg border border-[#D9DEE8] px-3 py-2 text-xs outline-none focus:border-[#B8862E] focus:ring-1 focus:ring-[#B8862E]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] text-[#68708A] mb-1">Expiry Date</label>
+                        <input
+                          type="date"
+                          value={formData.compliance_documents[key].expiry_date}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              compliance_documents: {
+                                ...formData.compliance_documents,
+                                [key]: {
+                                  ...formData.compliance_documents[key],
+                                  expiry_date: e.target.value,
+                                },
+                              },
+                            })
+                          }
+                          className="w-full rounded-lg border border-[#D9DEE8] px-3 py-2 text-xs outline-none focus:border-[#B8862E] focus:ring-1 focus:ring-[#B8862E]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
 
           {/* Immigration & WPS */}
           <section className="border-t border-[#E6E9F0] pt-5">
@@ -900,12 +1090,11 @@ export default function EmployeesPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
                 <div>
-                  <label className="block text-[11px] text-[#68708A] mb-1">Basic *</label>
+                  <label className="block text-[11px] text-[#68708A] mb-1">Basic</label>
                   <input
                     type="number"
                     min="0"
                     step="0.01"
-                    required
                     placeholder="0.00"
                     value={formData.basic_salary}
                     onChange={(e) => setFormData({ ...formData, basic_salary: e.target.value })}
@@ -977,10 +1166,9 @@ export default function EmployeesPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#18213A] mb-1">Corporate Email *</label>
+              <label className="block text-xs font-medium text-[#18213A] mb-1">Corporate Email</label>
               <input
                 type="email"
-                required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="w-full px-3 py-2 bg-[#F2F4F8] border border-[#E6E9F0] rounded-lg text-xs focus:border-[#B8862E] focus:bg-white"
@@ -1060,6 +1248,9 @@ export default function EmployeesPage() {
     </div>
   );
 }
+
+
+
 
 
 

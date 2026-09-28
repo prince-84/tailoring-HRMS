@@ -31,9 +31,93 @@ export default function PayslipsPage() {
   }, []);
 
   const handlePrint = () => {
-    window.print();
-  };
+    const payslip = document.querySelector('.print-payslip');
 
+    if (!payslip) {
+      showToast('Could not find the payslip to print', 'error');
+      return;
+    }
+
+    const printWindow = window.open('', '_blank', 'width=900,height=1100');
+
+    if (!printWindow) {
+      showToast('Please allow pop-ups to print the payslip', 'error');
+      return;
+    }
+
+    const printablePayslip = payslip.cloneNode(true) as HTMLElement;
+
+    printablePayslip.querySelectorAll('.print-hidden').forEach((element) => {
+      element.remove();
+    });
+
+    const styles = Array.from(document.styleSheets)
+      .map((sheet) => {
+        try {
+          return Array.from(sheet.cssRules)
+            .map((rule) => rule.cssText)
+            .join('\n');
+        } catch {
+          return '';
+        }
+      })
+      .filter(Boolean)
+      .join('\n');
+
+    printWindow.document.open();
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8" />
+          <title>Payslip</title>
+          <style>
+            ${styles}
+
+            @page {
+              margin: 0;
+            }
+
+            html,
+            body {
+              margin: 0 !important;
+              padding: 0 !important;
+              background: #ffffff !important;
+            }
+
+            body {
+              min-height: 100vh;
+            }
+
+            .print-payslip {
+              width: 100% !important;
+              max-width: 576px !important;
+              margin: 0 auto !important;
+              padding: 24px !important;
+              border: 0 !important;
+              border-radius: 0 !important;
+              box-shadow: none !important;
+              overflow: visible !important;
+              background: #ffffff !important;
+            }
+
+            .print-payslip-section {
+              break-inside: avoid;
+              page-break-inside: avoid;
+            }
+          </style>
+        </head>
+        <body></body>
+      </html>
+    `);
+    printWindow.document.close();
+
+    printWindow.document.body.appendChild(printablePayslip);
+
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+  };
   const columns: Column<any>[] = [
     {
       key: 'payslip_number',
@@ -113,7 +197,8 @@ export default function PayslipsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between bg-white p-5 rounded-2xl border border-[#E6E9F0]">
+      <div className="print-hidden">
+        <div className="flex items-center justify-between bg-white p-5 rounded-2xl border border-[#E6E9F0]">
         <div className="flex items-center gap-3">
           <button
             onClick={() => (window.location.href = '/payroll')}
@@ -129,24 +214,26 @@ export default function PayslipsPage() {
           </div>
         </div>
       </div>
+      </div>
 
       <DataTable
         title="Dispatched Payslips"
         columns={columns}
         data={payslips}
         isLoading={isLoading}
-      />
+        />
 
       {/* Printable Payslip Modal */}
       {selectedSlip && (
-        <Modal
+        <div className="print-modal">
+          <Modal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           title={`Payslip — ${selectedSlip.payslip_number}`}
           subtitle={`Employee: ${selectedSlip.employee?.full_name} (${selectedSlip.employee?.employee_code})`}
           maxWidth="xl"
         >
-          <div className="p-6 bg-white rounded-2xl border border-[#E6E9F0] space-y-6 text-sm">
+          <div className="print-payslip p-6 bg-white rounded-2xl border border-[#E6E9F0] space-y-6 text-sm">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-[#E6E9F0] pb-4">
               <div className="flex items-center gap-2.5">
@@ -258,7 +345,7 @@ export default function PayslipsPage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex justify-end gap-2 pt-2 border-t border-[#E6E9F0]">
+            <div className="print-hidden flex justify-end gap-2 pt-2 border-t border-[#E6E9F0]">
               <button
                 type="button"
                 onClick={handlePrint}
@@ -269,8 +356,20 @@ export default function PayslipsPage() {
               </button>
             </div>
           </div>
-        </Modal>
+          </Modal>
+        </div>
       )}
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+

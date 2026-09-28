@@ -36,11 +36,22 @@ class DashboardController extends Controller
         $pendingLeavesCount = LeaveApplication::where('status', 'pending')->count();
         $pendingRegularizationsCount = AttendanceRegularization::where('status', 'pending')->count();
 
-        // Compliance Alerts (within 90 days and expired)
+        // Compliance Alerts (document-specific expiry windows and expired documents)
+        $today = Carbon::today();
+        $passportAlertDate = $today->copy()->addMonths(7)->format('Y-m-d');
+        $oneMonthAlertDate = $today->copy()->addMonth()->format('Y-m-d');
+
         $complianceAlerts = ComplianceDocument::with('employee.department')
-            ->where(function ($query) {
-                $query->where('expiry_date', '<=', Carbon::now()->addDays(90)->format('Y-m-d'))
-                    ->orWhere('expiry_date', '<', Carbon::now()->format('Y-m-d'));
+            ->where(function ($query) use ($today, $passportAlertDate, $oneMonthAlertDate) {
+                $query->where('expiry_date', '<', $today->format('Y-m-d'))
+                    ->orWhere(function ($query) use ($passportAlertDate) {
+                        $query->where('document_type', 'Passport')
+                            ->where('expiry_date', '<=', $passportAlertDate);
+                    })
+                    ->orWhere(function ($query) use ($oneMonthAlertDate) {
+                        $query->whereIn('document_type', ['Emirates ID', 'Visa'])
+                            ->where('expiry_date', '<=', $oneMonthAlertDate);
+                    });
             })
             ->orderBy('expiry_date', 'asc')
             ->take(6)
@@ -131,3 +142,4 @@ class DashboardController extends Controller
         ]);
     }
 }
+
