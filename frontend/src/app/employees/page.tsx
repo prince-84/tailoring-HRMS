@@ -900,7 +900,7 @@ export default function EmployeesPage() {
                 >
                   <option value="">Select Transfer Method</option>
                   <option value="SIF - General">SIF - General</option>
-                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="ATM">ATM</option>
                   <option value="Cash">Cash</option>
                   <option value="Cheque">Cheque</option>
                 </select>
