@@ -40,11 +40,64 @@ class PayrollController extends Controller
 
     public function runDetails(PayrollRun $payrollRun): JsonResponse
     {
-        $payrollRun->load(['payslips.employee.department', 'payslips.employee.designation', 'approver']);
+        $payrollRun->load([
+            'payslips.employee',
+            'payslips.employee.company',
+            'approver',
+        ]);
+
+        $employees = $payrollRun->payslips->map(function (Payslip $payslip) {
+            $employee = $payslip->employee;
+
+            return [
+                'employeeName' => $employee?->full_name ?? '',
+                'employeeMolId' => $employee?->company_visa_mol_id ?? '',
+                'payMode' => $employee?->salary_transfer_method ?? '',
+                'bankName' => $employee?->bank_name ?? '',
+                'accountNo' => $employee?->iban,
+                'numberOfLeaves' => 0,
+                'fixAmount' => (float) $payslip->basic_salary,
+                'varAmount' => (float) $payslip->other_allowances,
+                'totalAmount' => (float) $payslip->net_salary,
+            ];
+        })->values();
+
+        $atmEmployees = $employees->filter(
+            fn (array $employee) => strtoupper(trim($employee['payMode'])) === 'ATM'
+        );
+
+        $bankEmployees = $employees->filter(
+            fn (array $employee) => strtoupper(trim($employee['payMode'])) === 'BANK'
+                || strtoupper(trim($employee['payMode'])) === 'BANK TRANSFER'
+        );
+
+        $firstEmployee = $payrollRun->payslips->first()?->employee;
 
         return response()->json([
             'status' => 'success',
-            'data' => $payrollRun,
+            'data' => [
+                'header' => [
+                    'referenceNo' => 'PR-' . $payrollRun->year . str_pad($payrollRun->month, 2, '0', STR_PAD_LEFT) . '-' . $payrollRun->id,
+                    'createDate' => $payrollRun->created_at?->format('Y-m-d'),
+                    'employerId' => $firstEmployee?->company?->code,
+                    'employerName' => $firstEmployee?->company?->name,
+                    'salaryMonth' => (int) $payrollRun->month,
+                    'salaryYear' => (int) $payrollRun->year,
+                    'employeeCount' => $employees->count(),
+                    'totalSalary' => (float) $employees->sum('totalAmount'),
+                    'atmCount' => $atmEmployees->count(),
+                    'atmAmount' => (float) $atmEmployees->sum('totalAmount'),
+                    'status' => $payrollRun->status,
+                    'bankCount' => $bankEmployees->count(),
+                    'bankAmount' => (float) $bankEmployees->sum('totalAmount'),
+                ],
+                'employees' => $employees,
+                'totals' => [
+                    'fixAmount' => (float) $employees->sum('fixAmount'),
+                    'varAmount' => (float) $employees->sum('varAmount'),
+                    'totalAmount' => (float) $employees->sum('totalAmount'),
+                ],
+            ],
         ]);
     }
 

@@ -15,6 +15,8 @@ import {
 import DataTable, { Column } from '@/components/common/DataTable';
 import Badge from '@/components/common/Badge';
 import Modal from '@/components/common/Modal';
+import PayrollSlip from '@/components/payroll/PayrollSlip';
+import type { PayrollSlipData } from '@/components/payroll/payroll-slip.types';
 import api from '@/lib/api';
 import { showToast, successAlert, errorAlert } from '@/lib/swal';
 
@@ -22,6 +24,9 @@ export default function PayrollPage() {
   const [runs, setRuns] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedPayroll, setSelectedPayroll] = useState<PayrollSlipData | null>(null);
+  const [isPayrollModalOpen, setIsPayrollModalOpen] = useState(false);
+  const [isPayrollLoading, setIsPayrollLoading] = useState(false);
 
   // Generate Run Modal
   const [isRunModalOpen, setIsRunModalOpen] = useState(false);
@@ -50,10 +55,30 @@ export default function PayrollPage() {
       setIsLoading(false);
     }
   };
+  
+  const handleViewPayroll = async (runId: number) => {
+    setIsPayrollLoading(true);
+    setIsPayrollModalOpen(true);
+    setSelectedPayroll(null);
 
+    try {
+      const response = await api.get(`/payroll/runs/${runId}`);
+      setSelectedPayroll(response.data.data);
+    } catch (err: any) {
+      showToast(
+        err.response?.data?.message || 'Could not load payroll slip',
+        'error'
+      );
+      setIsPayrollModalOpen(false);
+    } finally {
+      setIsPayrollLoading(false);
+    }
+  };
+  
   useEffect(() => {
     fetchPayroll();
   }, []);
+
 
   const handleGenerateRun = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,6 +175,21 @@ export default function PayrollPage() {
         </Badge>
       ),
     },
+    {
+    key: 'actions',
+    header: 'Action',
+    sortable: false,
+    align: 'center',
+    render: (run) => (
+      <button
+        onClick={() => handleViewPayroll(run.id)}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#152244] hover:bg-[#101B36] text-white text-xs font-semibold transition"
+      >
+        <ArrowRight className="w-3.5 h-3.5" />
+        View Payroll
+      </button>
+      ),
+    },
   ];
 
   return (
@@ -187,14 +227,6 @@ export default function PayrollPage() {
         columns={columns}
         data={runs}
         isLoading={isLoading}
-        actionButton={
-          <button
-            onClick={() => (window.location.href = '/payroll/payslips')}
-            className="px-3.5 py-1.5 rounded-lg border border-[#E6E9F0] text-xs font-medium text-[#18213A] hover:bg-[#F2F4F8] transition"
-          >
-            <span>View All Payslips</span>
-          </button>
-        }
       />
 
       {/* Generate Run Modal */}
@@ -365,6 +397,33 @@ export default function PayrollPage() {
             </div>
           )}
         </form>
+      </Modal>
+
+      <Modal
+      isOpen={isPayrollModalOpen}
+      onClose={() => {
+        setIsPayrollModalOpen(false);
+        setSelectedPayroll(null);
+      }}
+      title="Payroll Slip"
+      subtitle={
+        selectedPayroll
+          ? `Payroll Register — ${selectedPayroll.header.salaryMonth}/${selectedPayroll.header.salaryYear}`
+          : 'Loading payroll register...'
+      }
+      maxWidth="7xl"
+    >
+      {isPayrollLoading ? (
+        <div className="flex items-center justify-center py-16">
+          <div className="w-8 h-8 border-4 border-[#152244]/20 border-t-[#152244] rounded-full animate-spin" />
+        </div>
+      ) : selectedPayroll ? (
+        <PayrollSlip payroll={selectedPayroll} />
+      ) : (
+        <div className="text-center py-16 text-[#68708A]">
+          Unable to load payroll register.
+        </div>
+      )}
       </Modal>
     </div>
   );
