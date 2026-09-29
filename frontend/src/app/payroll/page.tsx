@@ -3,14 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import {
   Calculator,
-  Receipt,
-  FileSpreadsheet,
-  Download,
   Plus,
   ArrowRight,
-  Sparkles,
-  Building,
-  CheckCircle2,
+  Printer,
 } from 'lucide-react';
 import DataTable, { Column } from '@/components/common/DataTable';
 import Badge from '@/components/common/Badge';
@@ -75,6 +70,29 @@ export default function PayrollPage() {
     }
   };
   
+    const handlePrintPayroll = async (runId: number) => {
+    setIsPayrollLoading(true);
+    setIsPayrollModalOpen(true);
+    setSelectedPayroll(null);
+
+    try {
+      const response = await api.get(`/payroll/runs/${runId}`);
+      setSelectedPayroll(response.data.data);
+
+      setTimeout(() => {
+        window.print();
+      }, 300);
+    } catch (err: any) {
+      showToast(
+        err.response?.data?.message || 'Could not load payroll slip',
+        'error'
+      );
+      setIsPayrollModalOpen(false);
+    } finally {
+      setIsPayrollLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchPayroll();
   }, []);
@@ -181,14 +199,24 @@ export default function PayrollPage() {
     sortable: false,
     align: 'center',
     render: (run) => (
-      <button
-        onClick={() => handleViewPayroll(run.id)}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#152244] hover:bg-[#101B36] text-white text-xs font-semibold transition"
-      >
-        <ArrowRight className="w-3.5 h-3.5" />
-        View Payroll
-      </button>
-      ),
+      <div className="flex items-center justify-center gap-2">
+        <button
+          onClick={() => handleViewPayroll(run.id)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#152244] hover:bg-[#101B36] text-white text-xs font-semibold transition"
+        >
+          <ArrowRight className="w-3.5 h-3.5" />
+          View Payroll
+        </button>
+
+        <button
+          onClick={() => handlePrintPayroll(run.id)}
+          title="Print Payroll"
+          className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-[#D9DDE7] text-[#152244] hover:bg-[#F2F4F8] transition"
+        >
+          <Printer className="w-4 h-4" />
+        </button>
+      </div>
+    ),
     },
   ];
 
